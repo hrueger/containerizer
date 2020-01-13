@@ -1,0 +1,27 @@
+{
+  "name": "containerizer",
+  "version": "1.0.0",
+  "description": "A cli tool to pack an application made with Angular and Express into a docker container.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hrueger/containerizer.git"
+  },
+  "keywords": [
+    "docker",
+    "angular",
+    "express",
+    "pack",
+    "containerize",
+    "cli"
+  ],
+  "author": "H. Rüger",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/hrueger/containerizer/issues"
+  },
+  "homepage": "https://github.com/hrueger/containerizer#readme"
+}
