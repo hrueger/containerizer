@@ -53,7 +53,29 @@ const filesToCreate = [
             }
         ]
     }
-]
+];
+const additionalBuilds = [
+    {
+        dir: "api",
+        cmd: "npm run build",
+    }
+];
+const unnecessaryFilesAndDirs = [
+    ".github",
+    "docs",
+    "AGM-Tools",
+    "fs",
+    ".gitignore",
+    "greenkeeper.json",
+    "README.txt",
+    "api/src",
+    "api/package.json",
+    "api/package-lock.json",
+    "api/tsconfig.json",
+    "api/tslint.json",
+    "api/.gitignore",
+];
+const startFile = "api/build/index.js";
 
 /// End of config
 
@@ -142,9 +164,41 @@ function main() {
                 await execShellCommand(buildCmd, {cwd: insideWorkDirPath(ngSrcDir)});
             }
         },
+        { 
+            text: "Running additional builds",
+            tasks: taskz(additionalBuilds.map((build) => {
+                    return {
+                        text: `building /${build.dir} with command ${build.cmd}`,
+                        task: async () => {
+                            await execShellCommand(build.cmd, {cwd: insideWorkDirPath(build.dir)});
+                        }
+                    };
+                })),
+        },
+        { 
+            text: "Removing unnecessary files and directories",
+            tasks: taskz(unnecessaryFilesAndDirs.map((item) => {
+                    return {
+                        text: `removing /${item}`,
+                        task: async () => {
+                            await new Promise((resolve, reject) => {
+                                rimraf(insideWorkDirPath(item), (err) => {
+                                    if (err) {
+                                        reject(err);
+                                    } else {
+                                        resolve(err);
+                                    }
+                                });
+                            });
+                        }
+                    };
+                })),
+        },
         {
-            text: "Cleanup",
-            task: () => {}
+            text: "Starting application",
+            task: async () => {
+                console.log(await execShellCommand(`${relativeToAbsolute(path.join("node_modules", ".bin", "pm2"))} start ${insideWorkDirPath(startFile)} --name app`));
+            }
         }
     ]);
     tasks.run().catch((err) => {
