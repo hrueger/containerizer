@@ -61,48 +61,95 @@ const filesToCreate = [
 const fs = require("fs");
 const path = require("path");
 const rimraf = require("rimraf");
-const {exec} = require('child_process');
+const {exec} = require("child_process");
 
 main();
 
-async function main() {
-    console.log("Creating workspace");
-    /*if (fs.existsSync(relativeToAbsolute(workingDirPath))) {
-        rimraf.sync(relativeToAbsolute(workingDirPath));
-    }
-    fs.mkdirSync(relativeToAbsolute(workingDirPath));*/
+function main() {
 
-    console.log(`Cloning ${repository} using branch ${branch}`);
-    const simpleGit = require('simple-git/promise')(relativeToAbsolute(workingDirPath));
-    // await simpleGit.clone(repository, ".", [`-b${branch}`]);
-
-    if (commit) {
-        console.log(`Checking out at commit ${commit}`);
-        // await simpleGit.checkout(commit);
-    } else {
-        console.log(`Checking out at latest commit`);
-    }
-
-    for (const dir of npmInstallDirs) {
-        console.log(`Running \"npm install\" in /${dir}`);
-        // await execShellCommand("npm install", {cwd: insideWorkDirPath(dir)});
-    };
-
-    for (const file of filesToCreate) {
-        console.log(`Creating /${file.path} with template ${file.template}`);
-        if (file.template == "typescript") {
-            fs.writeFileSync(insideWorkDirPath(file.path), `export const ${file.rootVariableName} = {${file.presetProperties.map((p) => `${p.key}: ${p.value},`).join("")}${file.properties.map((p) => `${p}: ${process.env[p]},`).join("")}};
-            `);
-        } else {
-            process.exit(1);
+    const taskz = require("taskz");
+ 
+    const tasks = taskz([
+        {
+            text: "Cleaning up old artifacs",
+            task: async () => {
+                await new Promise((resolve, reject) => {
+                    if (fs.existsSync(relativeToAbsolute(workingDirPath))) {
+                        rimraf(relativeToAbsolute(workingDirPath), (err) => {
+                            if (err) {
+                                reject(err);
+                            } else {
+                                resolve(err);
+                            }
+                        });
+                    } else {
+                        resolve();
+                    }
+                });
+            }
+        },
+        {
+            text: "Creating workspace",
+            task: async () => {
+                fs.mkdirSync(relativeToAbsolute(workingDirPath));
+            }
+        },
+        {
+            text: `Cloning ${repository} using branch ${branch}`,
+            task: async () => {
+                const simpleGit = require("simple-git/promise")(relativeToAbsolute(workingDirPath));
+                await simpleGit.clone(repository, ".", [`-b${branch}`]);
+            }
+        },
+        {
+            text: commit ? `Checking out commit ${commit}` : `Checking out latest commit`,
+            task: async () => {
+                const simpleGit = require("simple-git/promise")(relativeToAbsolute(workingDirPath));
+                await simpleGit.checkout(commit);
+            }
+        },
+        { 
+            text: "Running \"npm install\"",
+            tasks: taskz(npmInstallDirs.map((dir) => {
+                    return {
+                        text: `in /${dir}`,
+                        task: async () => {
+                            await execShellCommand("npm install", {cwd: insideWorkDirPath(dir)});
+                        }
+                    };
+                })),
+        },
+        {
+            text: "Creating secret files",
+            tasks: taskz(filesToCreate.map((file) => {
+                    return {
+                        text: `file /${file.path} with template ${file.template}`,
+                        task: () => {
+                            if (file.template == "typescript") {
+                                fs.writeFileSync(insideWorkDirPath(file.path), `export const ${file.rootVariableName} = {${file.presetProperties.map((p) => `${p.key}: ${p.value},`).join("")}${file.properties.map((p) => `${p}: ${process.env[p]},`).join("")}};
+                                `);
+                            } else {
+                                throw new Error(`Template ${file.template} is not supported!`);
+                            }
+                        }
+                    };
+                })),
+        },
+        {
+            text: `Building Angular app from ${ngSrcDir} with ${customNgBuildCmd ? "custom" : "standard"} build command ${customNgBuildCmd ? `(${customNgBuildCmd})` : ""}`,
+            task: async () => {
+                let buildCmd = (customNgBuildCmd ? customNgBuildCmd : `ng build --prod --baseHref / --outputPath ${insideWorkDirPath(ngDestDir)}`);
+                await execShellCommand(buildCmd, {cwd: insideWorkDirPath(ngSrcDir)});
+            }
+        },
+        {
+            text: "Cleanup",
+            task: () => {}
         }
-    }
-
-    let buildCmd = (customNgBuildCmd ? customNgBuildCmd : `ng build --prod --baseHref / --outputPath ${insideWorkDirPath(ngDestDir)}`);
-    console.log(`Building Angular app from ${ngSrcDir} with ${customNgBuildCmd ? "custom" : "standard"} build command ${customBuildCOmmand ? `(${customBuildCommand})` : ""}`);
-    await execShellCommand(buildCmd, {cwd: insideWorkDirPath(ngSrcDir)});
-
-    console.log("Finished!");
+    ]);
+    tasks.run().catch((err) => {
+        console.error(err);
+    });
 }
 
 
