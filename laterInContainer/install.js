@@ -1,89 +1,9 @@
-/// Start of config
-
-const workingDirPath = "./work"
-const repository = "https://github.com/hrueger/AGM-Tools"
-const branch = "api-v2"; // master
-const commit = ""; // 888c9937ea8fbacc689ae256fd0d7918bc89ac90
-const npmInstallDirs = ["AGM-Tools", "api"];
-const ngSrcDir = "AGM-Tools";
-const ngDestDir = "frontend_build";
-const customNgBuildCmd = "";
-const filesToCreate = [
-    {
-        path: "AGM-Tools/src/environments/environment.ts",
-        template: "typescript",
-        rootVariableName: "environment",
-        properties: [
-            "apiUrl",
-            "appUrl",
-            "firebase_apiKey",
-            "firebase_appId",
-            "firebase_authDomain",
-            "firebase_databaseURL",
-            "firebase_messagingSenderId",
-            "firebase_projectId",
-            "firebase_storageBucket"
-        ],
-        presetProperties: [
-            {
-                key: "production",
-                value: false,
-            }
-        ]
-    },
-    {
-        path: "AGM-Tools/src/environments/environment.prod.ts",
-        template: "typescript",
-        rootVariableName: "environment",
-        properties: [
-            "apiUrl",
-            "appUrl",
-            "firebase_apiKey",
-            "firebase_appId",
-            "firebase_authDomain",
-            "firebase_databaseURL",
-            "firebase_messagingSenderId",
-            "firebase_projectId",
-            "firebase_storageBucket"
-        ],
-        presetProperties: [
-            {
-                key: "production",
-                value: true,
-            }
-        ]
-    }
-];
-const additionalBuilds = [
-    {
-        dir: "api",
-        cmd: "npm run build",
-    }
-];
-const unnecessaryFilesAndDirs = [
-    ".github",
-    "docs",
-    "AGM-Tools",
-    "fs",
-    ".gitignore",
-    "greenkeeper.json",
-    "README.txt",
-    "api/src",
-    "api/package.json",
-    "api/package-lock.json",
-    "api/tsconfig.json",
-    "api/tslint.json",
-    "api/.gitignore",
-];
-const startFile = "api/build/index.js";
-
-/// End of config
-
-
 const fs = require("fs");
 const path = require("path");
 const rimraf = require("rimraf");
 const {exec} = require("child_process");
+
+const config = JSON.parse(fs.readFileSync(path.join(__dirname, "containerizer.json")));
 
 main();
 
@@ -96,8 +16,8 @@ function main() {
             text: "Cleaning up old artifacs",
             task: async () => {
                 await new Promise((resolve, reject) => {
-                    if (fs.existsSync(relativeToAbsolute(workingDirPath))) {
-                        rimraf(relativeToAbsolute(workingDirPath), (err) => {
+                    if (fs.existsSync(relativeToAbsolute(config.workingDirPath))) {
+                        rimraf(relativeToAbsolute(config.workingDirPath), (err) => {
                             if (err) {
                                 reject(err);
                             } else {
@@ -113,26 +33,26 @@ function main() {
         {
             text: "Creating workspace",
             task: async () => {
-                fs.mkdirSync(relativeToAbsolute(workingDirPath));
+                fs.mkdirSync(relativeToAbsolute(config.workingDirPath));
             }
         },
         {
-            text: `Cloning ${repository} using branch ${branch}`,
+            text: `Cloning ${config.repository} using branch ${config.branch}`,
             task: async () => {
-                const simpleGit = require("simple-git/promise")(relativeToAbsolute(workingDirPath));
-                await simpleGit.clone(repository, ".", [`-b${branch}`]);
+                const simpleGit = require("simple-git/promise")(relativeToAbsolute(config.workingDirPath));
+                await simpleGit.clone(config.repository, ".", [`-b${config.branch}`]);
             }
         },
         {
-            text: commit ? `Checking out commit ${commit}` : `Checking out latest commit`,
+            text: config.commit ? `Checking out commit ${config.commit}` : `Checking out latest commit`,
             task: async () => {
-                const simpleGit = require("simple-git/promise")(relativeToAbsolute(workingDirPath));
-                await simpleGit.checkout(commit);
+                const simpleGit = require("simple-git/promise")(relativeToAbsolute(config.workingDirPath));
+                await simpleGit.checkout(config.commit);
             }
         },
         { 
             text: "Running \"npm install\"",
-            tasks: taskz(npmInstallDirs.map((dir) => {
+            tasks: taskz(config.npmInstallDirs.map((dir) => {
                     return {
                         text: `in /${dir}`,
                         task: async () => {
@@ -143,13 +63,12 @@ function main() {
         },
         {
             text: "Creating secret files",
-            tasks: taskz(filesToCreate.map((file) => {
+            tasks: taskz(config.filesToCreate.map((file) => {
                     return {
                         text: `file /${file.path} with template ${file.template}`,
                         task: () => {
                             if (file.template == "typescript") {
-                                fs.writeFileSync(insideWorkDirPath(file.path), `export const ${file.rootVariableName} = {${file.presetProperties.map((p) => `${p.key}: ${p.value},`).join("")}${file.properties.map((p) => `${p}: ${process.env[p]},`).join("")}};
-                                `);
+                                fs.writeFileSync(insideWorkDirPath(file.path), `export const ${file.rootVariableName} = {${Object.keys(file.presetProperties).map((key) => `${key}: ${typeof file.presetProperties[key] == "string" ? `"${file.presetProperties[key].replace(/"/g, '\'')}"`: file.presetProperties[key]},`).join("")}${file.properties.map((p) => `${p}: ${process.env[p]},`).join("")}};`);
                             } else {
                                 throw new Error(`Template ${file.template} is not supported!`);
                             }
@@ -158,15 +77,15 @@ function main() {
                 })),
         },
         {
-            text: `Building Angular app from ${ngSrcDir} with ${customNgBuildCmd ? "custom" : "standard"} build command ${customNgBuildCmd ? `(${customNgBuildCmd})` : ""}`,
+            text: `Building Angular app from ${config.ngSrcDir} with ${config.customNgBuildCmd ? "custom" : "standard"} build command ${config.customNgBuildCmd ? `(${config.customNgBuildCmd})` : ""}`,
             task: async () => {
-                let buildCmd = (customNgBuildCmd ? customNgBuildCmd : `ng build --prod --baseHref / --outputPath ${insideWorkDirPath(ngDestDir)}`);
-                await execShellCommand(buildCmd, {cwd: insideWorkDirPath(ngSrcDir)});
+                let buildCmd = (config.customNgBuildCmd ? config.customNgBuildCmd : `ng build --prod --baseHref / --outputPath ${insideWorkDirPath(config.ngDestDir)}`);
+                await execShellCommand(buildCmd, {cwd: insideWorkDirPath(config.ngSrcDir)});
             }
         },
         { 
             text: "Running additional builds",
-            tasks: taskz(additionalBuilds.map((build) => {
+            tasks: taskz(config.additionalBuilds.map((build) => {
                     return {
                         text: `building /${build.dir} with command ${build.cmd}`,
                         task: async () => {
@@ -177,7 +96,7 @@ function main() {
         },
         { 
             text: "Removing unnecessary files and directories",
-            tasks: taskz(unnecessaryFilesAndDirs.map((item) => {
+            tasks: taskz(config.unnecessaryFilesAndDirs.map((item) => {
                     return {
                         text: `removing /${item}`,
                         task: async () => {
@@ -197,7 +116,7 @@ function main() {
         {
             text: "Starting application",
             task: async () => {
-                console.log(await execShellCommand(`${relativeToAbsolute(path.join("node_modules", ".bin", "pm2"))} start ${insideWorkDirPath(startFile)} --name app`));
+                console.log(await execShellCommand(`${relativeToAbsolute(path.join("node_modules", ".bin", "pm2"))} start ${insideWorkDirPath(config.startFile)} --name app`));
             }
         }
     ]);
@@ -214,7 +133,7 @@ function relativeToAbsolute(p) {
 }
 
 function insideWorkDirPath(p) {
-    return path.join(relativeToAbsolute(workingDirPath), p);
+    return path.join(relativeToAbsolute(config.workingDirPath), p);
 }
 
 function execShellCommand(cmd, options) {
