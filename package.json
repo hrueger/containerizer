@@ -32,6 +32,9 @@
     "chalk": "^3.0.0",
     "clear": "^0.1.0",
     "esm": "^3.2.25",
-    "figlet": "^1.2.4"
+    "figlet": "^1.2.4",
+    "find-up": "^4.1.0",
+    "inquirer": "^7.0.3",
+    "inquirer-confirm": "^2.0.7"
   }
 }
