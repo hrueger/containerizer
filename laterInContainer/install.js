@@ -5,9 +5,7 @@ const {exec} = require("child_process");
 
 const config = JSON.parse(fs.readFileSync(path.join(__dirname, "containerizer.json")));
 
-main();
-
-function main() {
+exports.install = async () => {
 
     const taskz = require("taskz");
  
@@ -47,7 +45,7 @@ function main() {
             text: config.commit ? `Checking out commit ${config.commit}` : `Checking out latest commit`,
             task: async () => {
                 const simpleGit = require("simple-git/promise")(relativeToAbsolute(config.workingDirPath));
-                await simpleGit.checkout(config.commit);
+                await simpleGit.checkout(config.commit ? config.commit : config.branch);
             }
         },
         { 
@@ -68,7 +66,7 @@ function main() {
                         text: `file /${file.path} with template ${file.template}`,
                         task: () => {
                             if (file.template == "typescript") {
-                                fs.writeFileSync(insideWorkDirPath(file.path), `export const ${file.rootVariableName} = {${Object.keys(file.presetProperties).map((key) => `${key}: ${typeof file.presetProperties[key] == "string" ? `"${file.presetProperties[key].replace(/"/g, '\'')}"`: file.presetProperties[key]},`).join("")}${file.properties.map((p) => `${p}: ${process.env[p]},`).join("")}};`);
+                                fs.writeFileSync(insideWorkDirPath(file.path), `export const ${file.rootVariableName} = {${Object.keys(file.presetProperties).map((key) => `${key}: ${typeof file.presetProperties[key] != "string" && file.presetProperties[key] != "number" ? `"${typeof file.presetProperties[key] == "string" ? file.presetProperties[key].replace(/"/g, '\'') : file.presetProperties[key]}"` : file.presetProperties[key]},`).join("")}${file.properties.map((p) => `${p}: ${process.env[p]},`).join("")}};`);
                             } else {
                                 throw new Error(`Template ${file.template} is not supported!`);
                             }
@@ -79,7 +77,7 @@ function main() {
         {
             text: `Building Angular app from ${config.ngSrcDir} with ${config.customNgBuildCmd ? "custom" : "standard"} build command ${config.customNgBuildCmd ? `(${config.customNgBuildCmd})` : ""}`,
             task: async () => {
-                let buildCmd = (config.customNgBuildCmd ? config.customNgBuildCmd : `ng build --prod --baseHref / --outputPath ${insideWorkDirPath(config.ngDestDir)}`);
+                let buildCmd = (config.customNgBuildCmd ? config.customNgBuildCmd : `node --max_old_space_size=12000 node_modules/.bin/ng build --prod --build-optimizer=false --baseHref / --outputPath ${insideWorkDirPath(config.ngDestDir)}`);
                 await execShellCommand(buildCmd, {cwd: insideWorkDirPath(config.ngSrcDir)});
             }
         },
@@ -100,28 +98,22 @@ function main() {
                     return {
                         text: `removing /${item}`,
                         task: async () => {
-                            await new Promise((resolve, reject) => {
-                                rimraf(insideWorkDirPath(item), (err) => {
-                                    if (err) {
-                                        reject(err);
-                                    } else {
-                                        resolve(err);
-                                    }
-                                });
-                            });
+                            rimraf.sync(insideWorkDirPath(item));
                         }
                     };
                 })),
         },
         {
-            text: "Starting application",
-            task: async () => {
-                console.log(await execShellCommand(`${relativeToAbsolute(path.join("node_modules", ".bin", "pm2"))} start ${insideWorkDirPath(config.startFile)} --name app`));
-            }
+            text: "Saving version data",
+            task: () => {
+                fs.writeFileSync(path.join(__dirname, "containerizer_client_app_version.json"), JSON.stringify({commit: config.commit, repository: config.repository, branch: config.branch}));
+            },
         }
     ]);
-    tasks.run().catch((err) => {
+    await tasks.run().catch((err) => {
+        console.log("\n");
         console.error(err);
+        process.exit(1);
     });
 }
 
@@ -140,9 +132,11 @@ function execShellCommand(cmd, options) {
     return new Promise((resolve, reject) => {
         exec(cmd, options, (error, stdout, stderr) => {
             if (error) {
+                console.log("\n");
                 console.warn(error);
+                process.exit(1);
             }
             resolve(stdout? stdout : stderr);
-        });
+        }).stdout.pipe(process.stdout);
     });
 }
