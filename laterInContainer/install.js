@@ -77,7 +77,7 @@ exports.install = async () => {
         {
             text: `Building Angular app from ${config.ngSrcDir} with ${config.customNgBuildCmd ? "custom" : "standard"} build command ${config.customNgBuildCmd ? `(${config.customNgBuildCmd})` : ""}`,
             task: async () => {
-                let buildCmd = (config.customNgBuildCmd ? config.customNgBuildCmd : `node --max_old_space_size=12000 node_modules/.bin/ng build --prod --build-optimizer=false --baseHref / --outputPath ${insideWorkDirPath(config.ngDestDir)}`);
+                let buildCmd = (config.customNgBuildCmd ? config.customNgBuildCmd : `node --max-old-space-size=8192 ./node_modules/@angular/cli/bin/ng build --prod --build-optimizer=false --baseHref / --outputPath ${insideWorkDirPath(config.ngDestDir)}`);
                 await execShellCommand(buildCmd, {cwd: insideWorkDirPath(config.ngSrcDir)});
             }
         },
@@ -113,7 +113,11 @@ exports.install = async () => {
     await tasks.run().catch((err) => {
         console.log("\n");
         console.error(err);
-        process.exit(1);
+        console.log("*******************************")
+        console.log("*******************************")
+        console.log("*******************************")
+        console.log("*******************************")
+        // process.exit(1);
     });
 }
 
@@ -130,13 +134,27 @@ function insideWorkDirPath(p) {
 
 function execShellCommand(cmd, options) {
     return new Promise((resolve, reject) => {
-        exec(cmd, options, (error, stdout, stderr) => {
+        const child = exec(cmd, options, (error, stdout, stderr) => {
+            console.log();
+            console.log();
+            console.log();
+            console.log(error, stdout, stderr);
             if (error) {
-                console.log("\n");
+                /*console.log("\n");
                 console.warn(error);
-                process.exit(1);
+                console.log("ERROR________________________________________")
+                console.log("ERROR________________________________________")
+                console.log("ERROR________________________________________")
+                console.log("ERROR________________________________________")*/
+                // process.exit(1);
             }
             resolve(stdout? stdout : stderr);
-        }).stdout.pipe(process.stdout);
+        });
+        // child.stdout.pipe(process.stdout);
+        child.stdout.setEncoding('utf8');
+        child.stdout.on('data', (chunk) => {
+            console.log("Info:", chunk.toString("utf8"));
+        });
+
     });
 }

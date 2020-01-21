@@ -134,6 +134,7 @@ RUN apk --update add git less openssh && \
 RUN npm install -g typescript
 RUN apk add --no-cache bash
 COPY . /app
+RUN mkdir /data
 RUN cd /app && npm i
 EXPOSE 80
 CMD    ["node", "/app/manage.js"]
@@ -186,7 +187,7 @@ CMD    ["node", "/app/manage.js"]
                 lastStatusMessage = "Executed \"docker save\"."
                 break;
             case "docker run":
-                console.log(`docker run ${removeDuplicates(config.filesToCreate.map((file) => file.properties).flat()).map((v) => ` --env ${v}='valueFor_${v}'`).join("")} ${fullImageName}`);
+                console.log(`docker run ${removeDuplicates(config.filesToCreate.map((file) => file.properties).flat()).map((v) => ` --env ${v}=valueFor_${v}`).join("")} ${fullImageName}`);
                 console.log(chalk.cyan("For development and debugging add -it after \"docker run\""));
                 lastStatusMessage = "";
                 break;
@@ -200,7 +201,7 @@ services:
             - "80"
         restart: always
         environment:
-            ${removeDuplicates(config.filesToCreate.map((file) => file.properties).flat()).map((v) => `${v}: 'valueFor_${v}'`).join("\n            ")}
+            ${removeDuplicates(config.filesToCreate.map((file) => file.properties).flat()).map((v) => `${v}: valueFor_${v}`).join("\n            ")}
 `);
                 lastStatusMessage = "Sucessfully generated \"docker-compose.yml\".";
                 break;
