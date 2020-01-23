@@ -168,7 +168,7 @@ CMD    ["node", "/app/manage.js"]
                 type: "list",
                 message: `${lastStatusMessage} What do you want to do?`,
                 choices: [
-                    {name: "Publish image to Docker Hub", value: "publish"},
+                    {name: "Push image to Docker Hub", value: "push"},
                     {name: "Save docker image as \".tar\"", value: "save"},
                     {name: "Generate \"docker-compose.yml\" file with environment variables", value: "docker-compose"},
                     {name: "Generate \"docker run\" command with environment variables", value: "docker run"},
@@ -178,7 +178,7 @@ CMD    ["node", "/app/manage.js"]
             }
         ]);
         switch(answer.whatToDo) {
-            case "publish":
+            case "push":
                 await execShellCommand(`docker push ${fullImageName}`);
                 lastStatusMessage = "Executed \"docker push\"."
                 break;

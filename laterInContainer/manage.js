@@ -18,10 +18,13 @@ async function main() {
         console.log();
         console.log(chalk.green("Environment change detected, rebuilding..."));
         console.log();
-
-        // await install();
-        // startApp();
+        await install();
+        fs.writeFileSync("environment_cache", JSON.stringify(process.env));
+        startApp();
     } else {
+        console.log();
+        console.log(chalk.green("No environment change detected, starting client app..."));
+        console.log();
         startApp();
     }
 }
@@ -62,7 +65,7 @@ function detectEnvChange() {
             isSimilar = false;
         }
     });
-    return isSimilar;
+    return !isSimilar;
 }
 
 function removeDuplicates(array) {

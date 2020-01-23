@@ -62,17 +62,24 @@ exports.install = async () => {
         {
             text: "Creating secret files",
             tasks: taskz(config.filesToCreate.map((file) => {
-                    return {
-                        text: `file /${file.path} with template ${file.template}`,
-                        task: () => {
-                            if (file.template == "typescript") {
-                                fs.writeFileSync(insideWorkDirPath(file.path), `export const ${file.rootVariableName} = {${Object.keys(file.presetProperties).map((key) => `${key}: ${typeof file.presetProperties[key] != "string" && file.presetProperties[key] != "number" ? `"${typeof file.presetProperties[key] == "string" ? file.presetProperties[key].replace(/"/g, '\'') : file.presetProperties[key]}"` : file.presetProperties[key]},`).join("")}${file.properties.map((p) => `${p}: ${process.env[p]},`).join("")}};`);
-                            } else {
-                                throw new Error(`Template ${file.template} is not supported!`);
-                            }
+                const data = {};
+                Object.keys(file.presetProperties).map((key) => {
+                    data[key] = file.presetProperties[key];
+                });
+                file.properties.map((key) => {
+                    data[key] = process.env[key];
+                });
+                return {
+                    text: `file /${file.path} with template ${file.template}`,
+                    task: () => {
+                        if (file.template == "typescript") {
+                            fs.writeFileSync(insideWorkDirPath(file.path), `export const ${file.rootVariableName} = ${JSON.stringify(data)};`);
+                        } else {
+                            throw new Error(`Template ${file.template} is not supported!`);
                         }
-                    };
-                })),
+                    }
+                };
+            })),
         },
         {
             text: `Building Angular app from ${config.ngSrcDir} with ${config.customNgBuildCmd ? "custom" : "standard"} build command ${config.customNgBuildCmd ? `(${config.customNgBuildCmd})` : ""}`,
@@ -138,7 +145,12 @@ function execShellCommand(cmd, options) {
             console.log();
             console.log();
             console.log();
-            console.log(error, stdout, stderr);
+            console.warn(error);
+            console.warn(error);
+            console.warn(stdout);
+            console.warn(stdout);
+            console.warn(stderr);
+            console.warn(stderr);
             if (error) {
                 /*console.log("\n");
                 console.warn(error);
