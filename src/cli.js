@@ -196,12 +196,17 @@ CMD    ["node", "/app/manage.js"]
 version: "3.7"
 services:
     yourContainerName:
+        container_name: yourContainerName
         image: ${fullImageName}
         ports:
-            - "80"
+            - "80:80"
         restart: always
         environment:
             ${removeDuplicates(config.filesToCreate.map((file) => file.properties).flat()).map((v) => `${v}: valueFor_${v}`).join("\n            ")}
+        volumes:
+            - type: bind
+            source: /path/on/your/host/machine
+            target: /data
 `);
                 lastStatusMessage = "Sucessfully generated \"docker-compose.yml\".";
                 break;
