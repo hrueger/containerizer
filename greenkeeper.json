@@ -1,0 +1,10 @@
+{
+  "groups": {
+    "default": {
+      "packages": [
+        "laterInContainer/package.json",
+        "package.json"
+      ]
+    }
+  }
+}
