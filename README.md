@@ -1,5 +1,6 @@
 # Containerizer
 
+[![npm](https://img.shields.io/npm/v/containerizer)](https://npmjs.com/package/containerizer)
 [![Greenkeeper badge](https://badges.greenkeeper.io/hrueger/containerizer.svg)](https://greenkeeper.io/)
 [![License](https://img.shields.io/badge/License-MIT-blue)](./LICENSE.md)
 [![GitHub last commit](https://img.shields.io/github/last-commit/hrueger/containerizer?color=brightgreen)](https://github.com/hrueger/containerizer/commits)
@@ -8,6 +9,12 @@
 This is a simple and easy to use CLI to pack an application made with Angular and Express into a docker container.
 
 ![Demo](./containerizer_demo.gif)
+
+## How to use
+1. Install globally using `npm install containerizer --global`.
+2. In the root folder of your Angular and Express App run `containerizer`.
+3. Answer all the questions.
+4. Enjoy your Docker Image!
 
 ## What does it do?
 Containerizer will first search for a `package.json` and a `containerizer.json` file in the current directory. Those files are used to provide autocomplete. It will then ask you a series of questions, which are documented below. The answers will be saved in the `containerizer.json` file in the current working directory. It will then build a docker container on top of the [tarampampam/node:12.14-alpine](https://github.com/tarampampam/node-docker) image. It will also bundle a few NodeJS scripts and the configuration.
