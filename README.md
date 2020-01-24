@@ -34,11 +34,11 @@ If you change the environment variables, it will detect that and then rebuild th
 | Directories to run "npm install" (separate with spaces) | `npmInstallDirs` | Directories to run "npm install". Seperate them with spaces. In the config file this will be an array. |  | `app/frontend app/backend` |
 | You can now edit the generated "containerizer.json" file to add filesToCreate, additionalBuilds and unnecessaryFilesAndDirs. Type in "Y" when you are done. | `filesToCreate`, `additionalBuilds`, `unnecessaryFilesAndDirs` | See below |  | See below |
 
-## FilesToCreate
+### FilesToCreate
 This property called `filesToCreate` is an array of objects. Those state, which files should be created before running the build. Those can be used for dynamic values from the environment.
 
-### Example:
-```json
+#### Example:
+```typescript
 {
     ...
     "filesToCreate": [
@@ -66,14 +66,14 @@ This property called `filesToCreate` is an array of objects. Those state, which 
 }
 ```
 
-### Templates:
+#### Templates:
 | Template name | Preview |
 | ------------- | ------- |
-| `typescript` | <pre lang="typescript">export const<br>    [rootVariableName] = {<br>    [property1]: [valueOfProperty1],<br>    [property2]: [valueOfProperty2],<br>    ...<br>};</pre> |
+| `typescript` | <code lang="typescript">export const<br>    [rootVariableName] = {<br>    [property1]: [valueOfProperty1],<br>    [property2]: [valueOfProperty2],<br>    ...<br>};</code> |
 Feel free to add more templates and create a pull request!
 
 
-## AdditionalBuilds
+### AdditionalBuilds
 This is an array of objects like this:
 ```json
 {
@@ -83,7 +83,7 @@ This is an array of objects like this:
 ```
 `dir` points to the directory where `cmd` should be run.
 
-## UnnecessaryFilesAndDirs
+### UnnecessaryFilesAndDirs
 This is an array of files and/or folders which should be deleted after the successfull build to save disk space.
 
 
