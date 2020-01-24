@@ -70,6 +70,7 @@ This property called `filesToCreate` is an array of objects. Those state, which 
 | Template name | Preview |
 | ------------- | ------- |
 | `typescript` | <code lang="typescript">export const<br>    [rootVariableName] = {<br>    [property1]: [valueOfProperty1],<br>    [property2]: [valueOfProperty2],<br>    ...<br>};</code> |
+
 Feel free to add more templates and create a pull request!
 
 
