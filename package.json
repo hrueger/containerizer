@@ -1,6 +1,6 @@
 {
   "name": "containerizer",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A cli tool to pack an application made with Angular and Express into a docker container.",
   "main": "src/index.js",
   "bin": {
@@ -10,6 +10,13 @@
   "publishConfig": {
     "access": "public"
   },
+  "files": [
+    "bin/",
+    "src/",
+    "laterInContainer/",
+    "!laterInContainer/node_modules",
+    "!laterInContainer/work"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/hrueger/containerizer.git"

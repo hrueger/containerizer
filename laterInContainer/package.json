@@ -1,6 +1,6 @@
 {
   "name": "containerizer-install-tool",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "This is part of the containerizer package and will run inside the container.",
   "repository": {
     "type": "git",

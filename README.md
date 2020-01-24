@@ -1,6 +1,9 @@
 # Containerizer
 
 [![Greenkeeper badge](https://badges.greenkeeper.io/hrueger/containerizer.svg)](https://greenkeeper.io/)
+[![License](https://img.shields.io/badge/License-MIT-blue)](./LICENSE.md)
+[![GitHub last commit](https://img.shields.io/github/last-commit/hrueger/containerizer?color=brightgreen)](https://github.com/hrueger/containerizer/commits)
+[![Maintenance](https://img.shields.io/maintenance/yes/2020)](https://github.com/hrueger/containerizer/commits)
 
 This is a simple and easy to use CLI to pack an application made with Angular and Express into a docker container.
 
@@ -17,6 +20,9 @@ If you change the environment variables, it will detect that and then rebuild th
 - Update check script
 - Updater
 - Provide web server with status updates while installing / updating
+- CLI Arguments
+
+Feel free to add more features with a pull request!
 
 ## Config
 | Question | Name in config file | Description | Default | Example |
