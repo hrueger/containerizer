@@ -84,7 +84,7 @@ exports.install = async () => {
         {
             text: `Building Angular app from ${config.ngSrcDir} with ${config.customNgBuildCmd ? "custom" : "standard"} build command ${config.customNgBuildCmd ? `(${config.customNgBuildCmd})` : ""}`,
             task: async () => {
-                let buildCmd = (config.customNgBuildCmd ? config.customNgBuildCmd : `node --max-old-space-size=8192 ./node_modules/@angular/cli/bin/ng build --prod --build-optimizer=false --baseHref / --outputPath ${insideWorkDirPath(config.ngDestDir)}`);
+                let buildCmd = (config.customNgBuildCmd ? config.customNgBuildCmd : `node --max-old-space-size=8192 ./node_modules/@angular/cli/bin/ng build --prod --build-optimizer=false --baseHref ${process.env.baseHref ? process.env.baseHref : "/"} --outputPath ${insideWorkDirPath(config.ngDestDir)}`);
                 await execShellCommand(buildCmd, {cwd: insideWorkDirPath(config.ngSrcDir)});
             }
         },

@@ -31,6 +31,12 @@ If you change the environment variables, it will detect that and then rebuild th
 
 Feel free to add more features with a pull request!
 
+## Basic container environment options
+| Name | Description | Default |
+| ---- | ----------- | ------- |
+| baseHref | The path where the application will later be accessible. | `/` |
+
+
 ## Config
 | Question | Name in config file | Description | Default | Example |
 | -------- | ------------------- | ----------- | ------- | ------- |
