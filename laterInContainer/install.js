@@ -13,6 +13,7 @@ exports.install = async () => {
         {
             text: "Cleaning up old artifacs",
             task: async () => {
+                setStatus(1, 10, "Cleaning up");
                 await new Promise((resolve, reject) => {
                     if (fs.existsSync(relativeToAbsolute(config.workingDirPath))) {
                         rimraf(relativeToAbsolute(config.workingDirPath), (err) => {
@@ -31,12 +32,14 @@ exports.install = async () => {
         {
             text: "Creating workspace",
             task: async () => {
+                setStatus(2, 10, "Creating workspace");
                 fs.mkdirSync(relativeToAbsolute(config.workingDirPath));
             }
         },
         {
             text: `Cloning ${config.repository} using branch ${config.branch}`,
             task: async () => {
+                setStatus(3, 10, "Downloading");
                 const simpleGit = require("simple-git/promise")(relativeToAbsolute(config.workingDirPath));
                 await simpleGit.clone(config.repository, ".", [`-b${config.branch}`]);
             }
@@ -44,16 +47,18 @@ exports.install = async () => {
         {
             text: config.commit ? `Checking out commit ${config.commit}` : `Checking out latest commit`,
             task: async () => {
+                setStatus(4, 10, "Downloading");
                 const simpleGit = require("simple-git/promise")(relativeToAbsolute(config.workingDirPath));
                 await simpleGit.checkout(config.commit ? config.commit : config.branch);
             }
         },
         { 
             text: "Running \"npm install\"",
-            tasks: taskz(config.npmInstallDirs.map((dir) => {
+            tasks: taskz(config.npmInstallDirs.map((dir, index) => {
                     return {
                         text: `in /${dir}`,
                         task: async () => {
+                            setStatus(5, 10, `Installing dependencies ${index + 1} of ${config.npmInstallDirs.length}`);
                             await execShellCommand("npm install", {cwd: insideWorkDirPath(dir)});
                         }
                     };
@@ -62,6 +67,7 @@ exports.install = async () => {
         {
             text: "Creating secret files",
             tasks: taskz(config.filesToCreate.map((file) => {
+                setStatus(6, 10, "Creating config");
                 const data = {};
                 Object.keys(file.presetProperties).map((key) => {
                     data[key] = file.presetProperties[key];
@@ -84,13 +90,15 @@ exports.install = async () => {
         {
             text: `Building Angular app from ${config.ngSrcDir} with ${config.customNgBuildCmd ? "custom" : "standard"} build command ${config.customNgBuildCmd ? `(${config.customNgBuildCmd})` : ""}`,
             task: async () => {
+                setStatus(7, 10, `Installing 1 of ${config.additionalBuilds.length + 1}`);
                 let buildCmd = (config.customNgBuildCmd ? config.customNgBuildCmd : `node --max-old-space-size=8192 ./node_modules/@angular/cli/bin/ng build --prod --build-optimizer=false --baseHref ${process.env.baseHref ? process.env.baseHref : "/"} --outputPath ${insideWorkDirPath(config.ngDestDir)}`);
                 await execShellCommand(buildCmd, {cwd: insideWorkDirPath(config.ngSrcDir)});
             }
         },
         { 
             text: "Running additional builds",
-            tasks: taskz(config.additionalBuilds.map((build) => {
+            tasks: taskz(config.additionalBuilds.map((build, index) => {
+                    setStatus(8, 10, `Installing ${index + 2} of${config.additionalBuilds.length + 1}`);
                     return {
                         text: `building /${build.dir} with command ${build.cmd}`,
                         task: async () => {
@@ -99,9 +107,10 @@ exports.install = async () => {
                     };
                 })),
         },
-        { 
+        {
             text: "Removing unnecessary files and directories",
             tasks: taskz(config.unnecessaryFilesAndDirs.map((item) => {
+                    setStatus(9, 10, `Cleaning up`);
                     return {
                         text: `removing /${item}`,
                         task: async () => {
@@ -113,6 +122,7 @@ exports.install = async () => {
         {
             text: "Saving version data",
             task: () => {
+                setStatus(10, 10, `Saving version`);
                 fs.writeFileSync(path.join(__dirname, "containerizer_client_app_version.json"), JSON.stringify({commit: config.commit, repository: config.repository, branch: config.branch}));
             },
         }
@@ -169,4 +179,8 @@ function execShellCommand(cmd, options) {
         });
 
     });
+}
+
+function setStatus(stepNr, totalSteps, statusText) {
+    fs.writeFileSync("./installStatus.json", JSON.stringify({stepNr, totalSteps, statusText}));
 }

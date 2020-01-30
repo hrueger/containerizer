@@ -19,15 +19,18 @@ This is a simple and easy to use CLI to pack an application made with Angular an
 ## What does it do?
 Containerizer will first search for a `package.json` and a `containerizer.json` file in the current directory. Those files are used to provide autocomplete. It will then ask you a series of questions, which are documented below. The answers will be saved in the `containerizer.json` file in the current working directory. It will then build a docker container on top of the [tarampampam/node:12.14-alpine](https://github.com/tarampampam/node-docker) image. It will also bundle a few NodeJS scripts and the configuration.
 
-Once you start the container using either your own or the generated `docker-compose.yml` / `docker run` command, it will clone your GitHub repository and check out the required branch and commit. It will then install all the required dependencies, build your application and afterwards start it.
+Once you start the container using either your own or the generated `docker-compose.yml` / `docker run` command, it will clone your GitHub repository and check out the required branch and commit. It will then install all the required dependencies, build your application and afterwards start it. During this installation process, a webserver is started on port 80, which serves a statuspage with information about the installation process. It looks like this:
+
+![InstallScreen](./install_screen.png)
+
 
 If you change the environment variables, it will detect that and then rebuild the application.
 
 ## Roadmap
-- Update check script
-- Updater
-- Provide web server with status updates while installing / updating
-- CLI Arguments
+- ☐ Update check script
+- ☐ Updater
+- ☐ CLI Arguments
+- ☑ Provide web server with status updates while installing (is implemented!)
 
 Feel free to add more features with a pull request!
 
