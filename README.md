@@ -27,10 +27,10 @@ Once you start the container using either your own or the generated `docker-comp
 If you change the environment variables, it will detect that and then rebuild the application.
 
 ## Roadmap
-- ☐ Update check script
-- ☐ Updater
-- ☐ CLI Arguments
-- ☑ Provide web server with status updates while installing (is implemented!)
+- :black_square_button: Update check script
+- :black_square_button: Updater
+- :black_square_button: CLI Arguments
+- :white_check_mark: Provide web server with status updates while installing (is implemented!)
 
 Feel free to add more features with a pull request!
 
