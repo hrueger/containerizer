@@ -45,6 +45,7 @@ export async function cli(args) {
         startFile: undefined,
         npmInstallDirs: undefined,
         debug: true,
+        fastUpdateMode: true,
         wirkingDirPath: "/app/work",
         filesToCreate: `{
             'path': 'path/to/my/file',
@@ -80,7 +81,7 @@ export async function cli(args) {
         const jsonContent = JSON.parse(fs.readFileSync(configJsonPath).toString());
         if (jsonContent) {
             Object.keys(jsonContent).forEach((key) => {
-                if (jsonContent[key]) {
+                if (jsonContent[key] || jsonContent[key] === false) {
                     config[key] = jsonContent[key];
                 }
             });
@@ -317,6 +318,12 @@ function askAllQuestions(args, config) {
                 }
                 return value;
             }
+        },
+        {
+            type: "confirm",
+            name: "fastUpdateMode",
+            message: "Enable fast update mode:",
+            default: config.fastUpdateMode,
         }
     ];
     

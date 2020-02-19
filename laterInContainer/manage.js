@@ -4,14 +4,16 @@ const path = require("path");
 const chalk = require("chalk");
 const {install} = require("./install");
 const http = require("http");
+const GitHub = require("github-api");
+const parseGitHubUrl = require("github-url-to-object");
 
 
 const config = JSON.parse(fs.readFileSync(path.join(__dirname, "containerizer.json")));
-
+const versionInfoFileName = "containerizer_client_app_version.json";
 main();
 
 async function main() {
-    if (!fs.existsSync(path.join(__dirname, "containerizer_client_app_version.json"))) {
+    if (!fs.existsSync(path.join(__dirname, versionInfoFileName))) {
         console.log();
         console.log(chalk.green("First run detected, installing..."));
         console.log();
@@ -86,6 +88,54 @@ function startApp() {
     clientAppProcess.on("close", code => {
         console.log(chalk.yellow(`Client app exited with code ${code}.`));
     });
+    const server = http.createServer(async function (request, response) {
+        if (request.url.endsWith("/update")) {
+            response.writeHead(200, { "Content-Type": "application/json" });
+            response.end(JSON.stringify({success: true}), "utf-8");
+            server.close();
+            await update(clientAppProcess);
+        } else {
+            const gh = new GitHub();
+            const repoInfo = parseGitHubUrl(config.repository);
+            const versionInfo = JSON.parse(fs.readFileSync(path.join(__dirname, versionInfoFileName)));
+            const commits = (await (await gh.getRepo(repoInfo.user, repoInfo.repo)).listCommits()).data.reverse();
+            const newerCommits = [];
+            let commit;
+            do {
+                if (commit) {
+                    newerCommits.push(commit);
+                }
+                commit = commits.pop();
+            } while (commit && commit.sha != versionInfo.commit)
+            const data = {};
+            if (newerCommits.length > 0) {
+                data.updatesAvalible = true;
+                data.updateCount = newerCommits.length;
+                data.updates = newerCommits.map((c) => c.commit.message);
+            } else {
+                data.updatesAvalible = false;
+            }
+            data.containerizerVersion = require("./package.json").version;
+            data.time = Date.now();
+            response.writeHead(200, { "Content-Type": "application/json" });
+            response.end(JSON.stringify({data}, getCircularReplacer()), "utf-8");
+        }
+    }).listen(8314);
+}
+
+async function update(clientAppProcess) {
+    console.log();
+    console.log(chalk.yellow("Stopping client app in order to update..."));
+    console.log();
+    clientAppProcess.stdin.pause();
+    clientAppProcess.kill();
+    console.log(chalk.yellow("Starting update"));
+    console.log();
+    await install(true);
+    console.log();
+    console.log(chalk.green("Updating finished, starting client app..."));
+    console.log();
+    startApp();
 }
 
 function insideWorkDirPath(p, config) {
@@ -113,3 +163,16 @@ function detectEnvChange() {
 function removeDuplicates(array) {
     return array.filter((a, b) => array.indexOf(a) === b) ;
 };
+
+const getCircularReplacer = () => {
+    const seen = new WeakSet();
+    return (key, value) => {
+      if (typeof value === "object" && value !== null) {
+        if (seen.has(value)) {
+          return;
+        }
+        seen.add(value);
+      }
+      return value;
+    };
+  };

@@ -1,6 +1,6 @@
 {
   "name": "containerizer-install-tool",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "This is part of the containerizer package and will run inside the container.",
   "repository": {
     "type": "git",
@@ -21,6 +21,8 @@
   },
   "homepage": "https://github.com/hrueger/containerizer#readme",
   "dependencies": {
+    "github-api": "^3.3.0",
+    "github-url-to-object": "^4.0.4",
     "pm2": "^4.2.1",
     "rimraf": "^3.0.0",
     "simple-git": "^1.129.0",

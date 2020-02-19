@@ -23,14 +23,19 @@ Once you start the container using either your own or the generated `docker-comp
 
 ![InstallScreen](./install_screen.png)
 
-
 If you change the environment variables, it will detect that and then rebuild the application.
 
+## How to use
+8314
+
 ## Roadmap
-- :black_square_button: Update check script
-- :black_square_button: Updater
 - :black_square_button: CLI Arguments
+- :black_square_button: Update check script for releases mode
+- :black_square_button: Updater for releases mode
+- :white_check_mark: Update check script for commit mode
+- :white_check_mark: Updater for commit mode
 - :white_check_mark: Provide web server with status updates while installing (is implemented!)
+- :white_check_mark: Fast update mode
 
 Feel free to add more features with a pull request!
 
@@ -56,6 +61,7 @@ Feel free to add more features with a pull request!
 | Custom Angular build command (empty for default) | `customNgBuildCmd` | A custom build command to build the Angular App. |  | `ng build` |
 | The file to start in order to run the application | `startFile` | The file to start to run the application. |  | `/app/dist/api/app.js` |
 | Directories to run "npm install" (separate with spaces) | `npmInstallDirs` | Directories to run "npm install". Seperate them with spaces. In the config file this will be an array. |  | `app/frontend app/backend` |
+| Enable fast update mode | `fastUpdateMode` | If enabled, updating will be faster but more diskspace will be used. Also `unnecessaryFilesAndDirs` will be ignored. | `y` | n/a |
 | You can now edit the generated "containerizer.json" file to add filesToCreate, additionalBuilds and unnecessaryFilesAndDirs. Type in "Y" when you are done. | `filesToCreate`, `additionalBuilds`, `unnecessaryFilesAndDirs` | See below |  | See below |
 
 ### FilesToCreate

@@ -5,7 +5,7 @@ const {exec} = require("child_process");
 
 const config = JSON.parse(fs.readFileSync(path.join(__dirname, "containerizer.json")));
 
-exports.install = async () => {
+exports.install = async (updating=false) => {
 
     const taskz = require("taskz");
  
@@ -14,26 +14,30 @@ exports.install = async () => {
             text: "Cleaning up old artifacs",
             task: async () => {
                 setStatus(1, 10, "Cleaning up");
-                await new Promise((resolve, reject) => {
-                    if (fs.existsSync(relativeToAbsolute(config.workingDirPath))) {
-                        rimraf(relativeToAbsolute(config.workingDirPath), (err) => {
-                            if (err) {
-                                reject(err);
-                            } else {
-                                resolve(err);
-                            }
-                        });
-                    } else {
-                        resolve();
-                    }
-                });
+                if (!updating || !config.fastUpdateMode) {
+                    await new Promise((resolve, reject) => {
+                        if (fs.existsSync(relativeToAbsolute(config.workingDirPath))) {
+                            rimraf(relativeToAbsolute(config.workingDirPath), (err) => {
+                                if (err) {
+                                    reject(err);
+                                } else {
+                                    resolve(err);
+                                }
+                            });
+                        } else {
+                            resolve();
+                        }
+                    });
+                }
             }
         },
         {
             text: "Creating workspace",
             task: async () => {
                 setStatus(2, 10, "Creating workspace");
-                fs.mkdirSync(relativeToAbsolute(config.workingDirPath));
+                if (!updating || !config.fastUpdateMode) {
+                    fs.mkdirSync(relativeToAbsolute(config.workingDirPath));
+                }
             }
         },
         {
@@ -41,15 +45,21 @@ exports.install = async () => {
             task: async () => {
                 setStatus(3, 10, "Downloading");
                 const simpleGit = require("simple-git/promise")(relativeToAbsolute(config.workingDirPath));
-                await simpleGit.clone(config.repository, ".", [`-b${config.branch}`]);
+                if (!updating || !config.fastUpdateMode) {
+                    await simpleGit.clone(config.repository, ".", [`-b${config.branch}`]);
+                } else {
+                    await simpleGit.pull();
+                }
             }
         },
         {
             text: config.commit ? `Checking out commit ${config.commit}` : `Checking out latest commit`,
             task: async () => {
                 setStatus(4, 10, "Downloading");
-                const simpleGit = require("simple-git/promise")(relativeToAbsolute(config.workingDirPath));
-                await simpleGit.checkout(config.commit ? config.commit : config.branch);
+                if (!updating || !config.fastUpdateMode) {
+                    const simpleGit = require("simple-git/promise")(relativeToAbsolute(config.workingDirPath));
+                    await simpleGit.checkout(config.commit ? config.commit : config.branch);
+                }
             }
         },
         { 
@@ -109,21 +119,31 @@ exports.install = async () => {
         },
         {
             text: "Removing unnecessary files and directories",
-            tasks: taskz(config.unnecessaryFilesAndDirs.map((item) => {
-                    setStatus(9, 10, `Cleaning up`);
-                    return {
-                        text: `removing /${item}`,
-                        task: async () => {
-                            rimraf.sync(insideWorkDirPath(item));
-                        }
-                    };
-                })),
+            tasks: () => {
+                if (!config.fastUpdateMode) {
+                    return taskz(config.unnecessaryFilesAndDirs.map((item) => {
+                        setStatus(9, 10, `Cleaning up`);
+                        return {
+                            text: `removing /${item}`,
+                            task: async () => {
+                                rimraf.sync(insideWorkDirPath(item));
+                            }
+                        };
+                    }));
+                }
+            },
         },
         {
             text: "Saving version data",
-            task: () => {
+            task: async () => {
                 setStatus(10, 10, `Saving version`);
-                fs.writeFileSync(path.join(__dirname, "containerizer_client_app_version.json"), JSON.stringify({commit: config.commit, repository: config.repository, branch: config.branch}));
+                const simpleGit = require("simple-git/promise")(relativeToAbsolute(config.workingDirPath));
+                const hash = (await simpleGit.log(["HEAD"])).latest.hash;
+                fs.writeFileSync(path.join(__dirname, "containerizer_client_app_version.json"), JSON.stringify({
+                    commit: hash,
+                    repository: config.repository,
+                    branch: config.branch,
+                }));
             },
         }
     ]);
