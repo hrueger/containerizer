@@ -17,10 +17,10 @@ async function main() {
         console.log();
         console.log(chalk.green("First run detected, installing..."));
         console.log();
-        fs.writeFileSync("./installStatus.json", JSON.stringify({stepNr: 0, totalSteps: 10, statusText: "Loading"}));
+        fs.writeFileSync(path.join(__dirname, "installStatus.json"), JSON.stringify({stepNr: 0, totalSteps: 10, statusText: "Loading"}));
         const server = http.createServer(function (request, response) {
             response.writeHead(200, { "Content-Type": "text/html" });
-            const data = JSON.parse(fs.readFileSync("./installStatus.json").toString());
+            const data = JSON.parse(fs.readFileSync(path.join(__dirname, "installStatus.json")).toString());
             const percentage = data.stepNr / data.totalSteps * 100;
             response.end(`
 <!DOCTYPE html>
@@ -47,7 +47,7 @@ async function main() {
         }).listen(80);
         console.log(chalk.yellow("Status server started on port 80"));
         await install();
-        fs.writeFileSync("environment_cache", JSON.stringify(process.env));
+        fs.writeFileSync(path.join(__dirname, "environment_cache"), JSON.stringify(process.env));
         await new Promise((resolve, reject) => {
             server.close((err) => {
                 if (err) {
@@ -64,7 +64,7 @@ async function main() {
         console.log(chalk.green("Environment change detected, rebuilding..."));
         console.log();
         await install();
-        fs.writeFileSync("environment_cache", JSON.stringify(process.env));
+        fs.writeFileSync(path.join(__dirname, "environment_cache"), JSON.stringify(process.env));
         startApp();
     } else {
         console.log();
@@ -152,7 +152,7 @@ function relativeToAbsolute(p) {
 
 function detectEnvChange() {
     const config = JSON.parse(fs.readFileSync(path.join(__dirname, "containerizer.json")));
-    const envFromCache = JSON.parse(fs.readFileSync("environment_cache"));
+    const envFromCache = JSON.parse(fs.readFileSync(path.join(__dirname, "environment_cache")));
     const envCurrent = process.env;
     const isSimilar = true;
     removeDuplicates(config.filesToCreate.map((file) => file.properties).flat()).forEach((prop) => {

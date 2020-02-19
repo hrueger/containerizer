@@ -202,5 +202,5 @@ function execShellCommand(cmd, options) {
 }
 
 function setStatus(stepNr, totalSteps, statusText) {
-    fs.writeFileSync("./installStatus.json", JSON.stringify({stepNr, totalSteps, statusText}));
+    fs.writeFileSync(path.join(__dirname, "installStatus.json"), JSON.stringify({stepNr, totalSteps, statusText}));
 }
