@@ -89,14 +89,18 @@ function startApp() {
         console.log(chalk.yellow(`Client app exited with code ${code}.`));
     });
     const server = http.createServer(async function (request, response) {
+        response.writeHead(200, { "Content-Type": "application/json" });
         if (request.url.endsWith("/update")) {
-            response.writeHead(200, { "Content-Type": "application/json" });
             response.end(JSON.stringify({success: true}), "utf-8");
             server.close();
             await update(clientAppProcess);
         } else {
             const gh = new GitHub();
             const repoInfo = parseGitHubUrl(config.repository);
+            if (!fs.existsSync(path.join(__dirname, versionInfoFileName))) {
+                response.end(JSON.stringify({updatesAvalible: false}), "utf-8");
+                return;
+            }
             const versionInfo = JSON.parse(fs.readFileSync(path.join(__dirname, versionInfoFileName)));
             const commits = (await (await gh.getRepo(repoInfo.user, repoInfo.repo)).listCommits()).data.reverse();
             const newerCommits = [];
@@ -117,7 +121,6 @@ function startApp() {
             }
             data.containerizerVersion = require("./package.json").version;
             data.time = Date.now();
-            response.writeHead(200, { "Content-Type": "application/json" });
             response.end(JSON.stringify({data}, getCircularReplacer()), "utf-8");
         }
     }).listen(8314);
