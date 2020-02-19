@@ -10,12 +10,6 @@ This is a simple and easy to use CLI to pack an application made with Angular an
 
 ![Demo](./containerizer_demo.gif)
 
-## How to use
-1. Install globally using `npm install containerizer --global`.
-2. In the root folder of your Angular and Express App run `containerizer`.
-3. Answer all the questions.
-4. Enjoy your Docker Image!
-
 ## What does it do?
 Containerizer will first search for a `package.json` and a `containerizer.json` file in the current directory. Those files are used to provide autocomplete. It will then ask you a series of questions, which are documented below. The answers will be saved in the `containerizer.json` file in the current working directory. It will then build a docker container on top of the [tarampampam/node:12.14-alpine](https://github.com/tarampampam/node-docker) image. It will also bundle a few NodeJS scripts and the configuration.
 
@@ -26,7 +20,20 @@ Once you start the container using either your own or the generated `docker-comp
 If you change the environment variables, it will detect that and then rebuild the application.
 
 ## How to use
-8314
+1. Install globally using `npm install containerizer --global`.
+2. In the root folder of your Angular and Express App run `containerizer`.
+3. Answer all the questions.
+4. Enjoy your Docker Image!
+
+## Update mechanism
+Once your app is running, a http server on port `8314` will be avalible inside the container. By making a `GET` request to `http://localhost:8314` you will get a json string. When no updates are avalible, it will look like this:
+```json
+
+```
+Or, when updates are avalible, you will get something like this:
+```json
+```
+To start the update process, make a `GET` request to `http://localhost:8314/update`. When you get `{success: true}`, your app will be killed and the update progress started. After a few seconds, the status server will take over port `80` and provide status information.
 
 ## Roadmap
 - :black_square_button: CLI Arguments
