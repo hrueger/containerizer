@@ -28,10 +28,27 @@ If you change the environment variables, it will detect that and then rebuild th
 ## Update mechanism
 Once your app is running, a http server on port `8314` will be avalible inside the container. By making a `GET` request to `http://localhost:8314` you will get a json string. When no updates are avalible, it will look like this:
 ```json
-
+{
+    "data":{
+        "updatesAvalible": false,
+        "containerizerVersion": "1.0.4",
+        "time": 1582239681254
+    }
+}
 ```
 Or, when updates are avalible, you will get something like this:
 ```json
+{
+    "data":{
+        "updatesAvalible":true,
+        "updateCount":1,
+        "updates": [
+            "The GitHub commit or release text"
+        ],
+        "containerizerVersion":"1.0.4",
+        "time":1582239768649
+    }
+}
 ```
 To start the update process, make a `GET` request to `http://localhost:8314/update`. When you get `{success: true}`, your app will be killed and the update progress started. After a few seconds, the status server will take over port `80` and provide status information.
 

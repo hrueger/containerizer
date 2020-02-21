@@ -21,7 +21,7 @@ async function main() {
         const server = http.createServer(function (request, response) {
             response.writeHead(200, { "Content-Type": "text/html" });
             const data = JSON.parse(fs.readFileSync(path.join(__dirname, "installStatus.json")).toString());
-            const percentage = data.stepNr / data.totalSteps * 100;
+            const percentage = Math.ceil(data.stepNr / data.totalSteps * 100);
             response.end(`
 <!DOCTYPE html>
 <html>
