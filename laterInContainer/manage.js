@@ -18,33 +18,7 @@ async function main() {
         console.log(chalk.green("First run detected, installing..."));
         console.log();
         fs.writeFileSync(path.join(__dirname, "installStatus.json"), JSON.stringify({stepNr: 0, totalSteps: 10, statusText: "Loading"}));
-        const server = http.createServer(function (request, response) {
-            response.writeHead(200, { "Content-Type": "text/html" });
-            const data = JSON.parse(fs.readFileSync(path.join(__dirname, "installStatus.json")).toString());
-            const percentage = Math.ceil(data.stepNr / data.totalSteps * 100);
-            response.end(`
-<!DOCTYPE html>
-<html>
-<head>
-<meta http-equiv="refresh" content="2"/>
-<link href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
-<title>${percentage}% | Installing ${config.imageName}</title>
-</head>
-<body>
-<div class="container p-1 pt-5">
-    <h1>${config.imageName} is installing...</h1>
-    <h5>Status: ${data.statusText}</h5>
-    <div class="progress">
-        <div class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="${percentage}" aria-valuemin="0" aria-valuemax="100" style="width:${percentage}%">
-            ${percentage}%
-        </div>
-    </div>
-    <p class="mt-3">Powered by <a href="https://github.com/hrueger/containerizer">Containerizer</a>.</p>
-</div>
-</body>
-</html>
-`, "utf-8");
-        }).listen(80);
+        const server = createStatusServer();
         console.log(chalk.yellow("Status server started on port 80"));
         await install();
         fs.writeFileSync(path.join(__dirname, "environment_cache"), JSON.stringify(process.env));
@@ -133,10 +107,27 @@ async function update(clientAppProcess) {
     console.log();
     clientAppProcess.stdin.pause();
     clientAppProcess.kill();
+    await new Promise((resolve, reject) => {
+        setTimeout(() => {
+            resolve();
+        }, 10000);
+    });
     console.log(chalk.yellow("Starting update"));
     console.log();
+    const server = createStatusServer(true);
+    console.log(chalk.yellow("Status server started on port 80"))
     await install(true);
     console.log();
+    await new Promise((resolve, reject) => {
+        server.close((err) => {
+            if (err) {
+                reject(err);
+            } else {
+                resolve();
+            }
+        });
+    });
+    console.log(chalk.yellow("Status server stopped in order to free port 80 for client app"));
     console.log(chalk.green("Updating finished, starting client app..."));
     console.log();
     startApp();
@@ -179,4 +170,34 @@ const getCircularReplacer = () => {
       }
       return value;
     };
-  };
+};
+
+function createStatusServer(updating=false) {
+    return http.createServer(function (request, response) {
+        response.writeHead(200, { "Content-Type": "text/html" });
+        const data = JSON.parse(fs.readFileSync(path.join(__dirname, "installStatus.json")).toString());
+        const percentage = Math.ceil(data.stepNr / data.totalSteps * 100);
+        response.end(`
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="refresh" content="2"/>
+<link href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+<title>${percentage}% | ${updating ? "Updating" : "Installing"} ${config.imageName}</title>
+</head>
+<body>
+<div class="container p-1 pt-5">
+<h1>${config.imageName} is ${updating ? "updating" : "installing"}...</h1>
+<h5>Status: ${data.statusText}</h5>
+<div class="progress">
+    <div class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="${percentage}" aria-valuemin="0" aria-valuemax="100" style="width:${percentage}%">
+        ${percentage}%
+    </div>
+</div>
+<p class="mt-3">Powered by <a href="https://github.com/hrueger/containerizer">Containerizer</a>.</p>
+</div>
+</body>
+</html>
+`, "utf-8");
+    }).listen(80);
+}
