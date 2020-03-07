@@ -1,7 +1,7 @@
 # Containerizer
 
 [![npm](https://img.shields.io/npm/v/containerizer)](https://npmjs.com/package/containerizer)
-[![Greenkeeper badge](https://badges.greenkeeper.io/hrueger/containerizer.svg)](https://greenkeeper.io/)
+[![Dependabot Status](https://api.dependabot.com/badges/status?host=github&repo=hrueger/containerizer)](https://dependabot.com)
 [![License](https://img.shields.io/badge/License-MIT-blue)](./LICENSE.md)
 [![GitHub last commit](https://img.shields.io/github/last-commit/hrueger/containerizer?color=brightgreen)](https://github.com/hrueger/containerizer/commits)
 [![Maintenance](https://img.shields.io/maintenance/yes/2020)](https://github.com/hrueger/containerizer/commits)
