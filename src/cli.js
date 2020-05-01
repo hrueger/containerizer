@@ -8,7 +8,7 @@ const path = require("path");
 const confirm = require("inquirer-confirm");
 const taskz = require("taskz");
 const rimraf = require("rimraf");
-const {exec} = require("child_process");
+const { exec } = require("child_process");
 
 function getVersion() {
     return JSON.parse(fs.readFileSync(path.join(__dirname, "../package.json"))).version;
@@ -21,7 +21,7 @@ export async function cli(args) {
     console.log("\n");
     console.log(chalk.blue("Thanks for using this tool. Feel free to contribute by creating pull requests or reporting issues on GitHub!"));
     console.log("\n");
-    
+
     if (args[2] == "help" || args[2] == "--help") {
         console.log(chalk.green("Help:\nPlease see https://github.com/hrueger/containerizer/blob/master/README.md"));
         process.exit();
@@ -30,7 +30,7 @@ export async function cli(args) {
         console.log(chalk.green(`v${getVersion()}`));
         process.exit();
     }
-    
+
     let config = {
         imageName: path.dirname(__dirname).split(path.sep).pop(),
         imageVersion: "1.0.0",
@@ -46,6 +46,7 @@ export async function cli(args) {
         npmInstallDirs: undefined,
         debug: true,
         fastUpdateMode: true,
+        supportNativeDependencies: false,
         wirkingDirPath: "/app/work",
         filesToCreate: `{
             'path': 'path/to/my/file',
@@ -100,8 +101,7 @@ export async function cli(args) {
 async function build() {
     const config = JSON.parse(fs.readFileSync(await findUp("containerizer.json")));
     const fullImageName = `${config.imageMaintainerUsername}/${config.imageName.toLowerCase()}:v${config.imageVersion}`;
-    const tasks = taskz([
-        {
+    const tasks = taskz([{
             text: "Creating workspace",
             task: () => {
                 if (fs.existsSync("buildWorkspace")) {
@@ -112,7 +112,7 @@ async function build() {
         },
         {
             text: "Creating \"Dockerfile\"",
-            task: async () => {
+            task: async() => {
                 fs.copyFileSync(path.join(__dirname, "../laterInContainer/install.js"), "buildWorkspace/install.js");
                 fs.copyFileSync(path.join(__dirname, "../laterInContainer/manage.js"), "buildWorkspace/manage.js");
                 fs.copyFileSync(path.join(__dirname, "../laterInContainer/package.json"), "buildWorkspace/package.json");
@@ -132,6 +132,7 @@ RUN apk add --update npm
 RUN apk --update add git less openssh && \
     rm -rf /var/lib/apt/lists/* && \
     rm /var/cache/apk/*
+${ supportNativeDependencies ? "RUN apk add --no-cache --virtual .gyp python make g++" : "" }
 RUN npm install -g typescript
 RUN apk add --no-cache bash
 COPY . /app
@@ -144,7 +145,7 @@ CMD    ["node", "/app/manage.js"]
         },
         {
             text: "Build docker image",
-            task: async () => {
+            task: async() => {
                 console.log(await execShellCommand(`docker build ./buildWorkspace/ -t ${fullImageName}`));
             }
         },
@@ -164,21 +165,19 @@ CMD    ["node", "/app/manage.js"]
     let quit = false;
     let lastStatusMessage = "Finished building the docker image!";
     do {
-        const answer = await inquirer.prompt([
-            {
-                type: "list",
-                message: `${lastStatusMessage} What do you want to do?`,
-                choices: [
-                    {name: "Push image to Docker Hub", value: "push"},
-                    {name: "Save docker image as \".tar\"", value: "save"},
-                    {name: "Generate \"docker-compose.yml\" file with environment variables", value: "docker-compose"},
-                    {name: "Generate \"docker run\" command with environment variables", value: "docker run"},
-                    {name: "Exit", value: "exit"}
-                ],
-                name: "whatToDo",
-            }
-        ]);
-        switch(answer.whatToDo) {
+        const answer = await inquirer.prompt([{
+            type: "list",
+            message: `${lastStatusMessage} What do you want to do?`,
+            choices: [
+                { name: "Push image to Docker Hub", value: "push" },
+                { name: "Save docker image as \".tar\"", value: "save" },
+                { name: "Generate \"docker-compose.yml\" file with environment variables", value: "docker-compose" },
+                { name: "Generate \"docker run\" command with environment variables", value: "docker run" },
+                { name: "Exit", value: "exit" }
+            ],
+            name: "whatToDo",
+        }]);
+        switch (answer.whatToDo) {
             case "push":
                 await execShellCommand(`docker push ${fullImageName}`);
                 lastStatusMessage = "Executed \"docker push\"."
@@ -324,6 +323,12 @@ function askAllQuestions(args, config) {
             name: "fastUpdateMode",
             message: "Enable fast update mode:",
             default: config.fastUpdateMode,
+        },
+        {
+            type: "confirm",
+            name: "supportNativeDependencies",
+            message: "Support native dependencies (adds node-gyp and compilers):",
+            default: config.supportNativeDependencies,
         }
     ];
     
