@@ -132,7 +132,8 @@ RUN apk add --update npm
 RUN apk --update add git less openssh && \
     rm -rf /var/lib/apt/lists/* && \
     rm /var/cache/apk/*
-${ config.supportNativeDependencies ? "RUN apk add --no-cache --virtual .gyp python make g++" : "" }
+${ config.supportNativeDependencies ? "RUN apk add --no-cache --virtual .gyp python make g++\
+RUN apk add --no-cache build-base g++ cairo-dev jpeg-dev pango-dev giflib-dev" : "" }
 RUN npm install -g typescript
 RUN apk add --no-cache bash
 COPY . /app

@@ -86,7 +86,7 @@ Feel free to add more features with a pull request!
 | The file to start in order to run the application | `startFile` | The file to start to run the application. |  | `/app/dist/api/app.js` |
 | Directories to run "npm install" (separate with spaces) | `npmInstallDirs` | Directories to run "npm install". Seperate them with spaces. In the config file this will be an array. |  | `app/frontend app/backend` |
 | Enable fast update mode | `fastUpdateMode` | If enabled, updating will be faster but more diskspace will be used. Also `unnecessaryFilesAndDirs` will be ignored. | `y` | n/a |
-| Support native dependencies | `supportNativeDependencies` | If enabled, `python`, `make` `g++` will be installed to make `node-gyp` work. Use it only when needed as it makes the image a lot bigger (additional 63 MB) | `n` | n/a |
+| Support native dependencies | `supportNativeDependencies` | If enabled, `python`, `make`, `g++` and some image libs will be installed to make `node-gyp` work. Use it only when needed as it makes the image a lot bigger (additional 63 MB) | `n` | n/a |
 | You can now edit the generated "containerizer.json" file to add filesToCreate, additionalBuilds and unnecessaryFilesAndDirs. Type in "Y" when you are done. | `filesToCreate`, `additionalBuilds`, `unnecessaryFilesAndDirs` | See below |  | See below |
 
 ### FilesToCreate
