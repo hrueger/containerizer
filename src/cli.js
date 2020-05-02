@@ -47,6 +47,8 @@ export async function cli(args) {
         debug: true,
         fastUpdateMode: true,
         supportNativeDependencies: false,
+        supportImageManipulation: false,
+        supportMicrosoftFonts: false,
         wirkingDirPath: "/app/work",
         filesToCreate: `{
             'path': 'path/to/my/file',
@@ -132,7 +134,9 @@ RUN apk add --update npm
 RUN apk --update add git less openssh && \
     rm -rf /var/lib/apt/lists/* && \
     rm /var/cache/apk/*
-${ config.supportNativeDependencies ? "RUN apk add --no-cache --virtual .gyp python make g++ build-base cairo-dev jpeg-dev pango-dev giflib-dev" : "" }
+${ config.supportNativeDependencies ? "RUN apk add --no-cache python make g++ build-base" : "" }
+${ config.supportImageManipulation ? "RUN apk add --no-cache cairo-dev jpeg-dev pango-dev giflib-dev" : "" }
+${ config.supportMicrosoftFonts ? "RUN apk --no-cache add msttcorefonts-installer fontconfig && update-ms-fonts && fc-cache -f" : "" }
 RUN npm install -g typescript
 RUN apk add --no-cache bash
 COPY . /app
@@ -329,6 +333,18 @@ function askAllQuestions(args, config) {
             name: "supportNativeDependencies",
             message: "Support native dependencies (adds node-gyp and compilers):",
             default: config.supportNativeDependencies,
+        },
+        {
+            type: "confirm",
+            name: "supportImageManipulation",
+            message: "Support image manipulation (adds image libraries):",
+            default: config.supportImageManipulation,
+        },
+        {
+            type: "confirm",
+            name: "supportMicrosoftFonts",
+            message: "Support Microsoft TrueTypeFonts (installs Times, Arial, ...):",
+            default: config.supportMicrosoftFonts,
         }
     ];
     
