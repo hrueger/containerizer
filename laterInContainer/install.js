@@ -3,7 +3,10 @@ const path = require("path");
 const rimraf = require("rimraf");
 const { exec } = require("child_process");
 
+const INSTALLED_FILE = "/installed.txt";
+
 const config = JSON.parse(fs.readFileSync(path.join(__dirname, "containerizer.json")));
+const alreadyInstalled = fs.existsSync(INSTALLED_FILE);
 
 exports.install = async(updating = false) => {
 
@@ -13,7 +16,7 @@ exports.install = async(updating = false) => {
                         text: "Cleaning up old artifacs",
                         task: async() => {
                             setStatus(1, 9, "Cleaning up");
-                            if (!config.fastUpdateMode) {
+                            if (!config.fastUpdateMode || !alreadyInstalled) {
                                 await new Promise((resolve, reject) => {
                                     if (fs.existsSync(relativeToAbsolute(config.workingDirPath))) {
                                         rimraf(relativeToAbsolute(config.workingDirPath), (err) => {
@@ -34,7 +37,7 @@ exports.install = async(updating = false) => {
                         text: "Creating workspace",
                         task: async() => {
                             setStatus(2, 9, "Creating workspace");
-                            if (!config.fastUpdateMode) {
+                            if (!config.fastUpdateMode || !alreadyInstalled) {
                                 fs.mkdirSync(relativeToAbsolute(config.workingDirPath));
                             }
                         }
@@ -44,7 +47,7 @@ exports.install = async(updating = false) => {
                         task: async() => {
                             setStatus(3, 9, "Downloading");
                             const simpleGit = require("simple-git/promise")(relativeToAbsolute(config.workingDirPath));
-                            if (!config.fastUpdateMode) {
+                            if (!config.fastUpdateMode || !alreadyInstalled) {
                                 await simpleGit.clone(config.repository, ".", [`-b${config.branch}`]);
                             } else {
                                 await simpleGit.pull();
@@ -55,7 +58,7 @@ exports.install = async(updating = false) => {
                         text: config.commit ? `Checking out commit ${config.commit}` : `Checking out latest commit`,
                         task: async() => {
                             setStatus(4, 9, "Downloading");
-                            if (!config.fastUpdateMode) {
+                            if (!config.fastUpdateMode || !alreadyInstalled) {
                                 const simpleGit = require("simple-git/promise")(relativeToAbsolute(config.workingDirPath));
                                 await simpleGit.checkout(config.commit ? config.commit : config.branch);
                             }
@@ -153,13 +156,14 @@ exports.install = async(updating = false) => {
         repository: config.repository,
         branch: config.branch,
     }));
+    fs.writeFileSync(INSTALLED_FILE, "true");
 }
 
 
 // Helpers
 
 function relativeToAbsolute(p) {
-    return path.join(__dirname, p);
+    return p.startsWith("/") ? p : path.join(__dirname, p);
 }
 
 function insideWorkDirPath(p) {
