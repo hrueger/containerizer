@@ -2,7 +2,7 @@ const { spawn } = require("child_process");
 const fs = require("fs");
 const path = require("path");
 const chalk = require("chalk");
-const {install} = require("./install");
+const { install } = require("./install");
 const http = require("http");
 const GitHub = require("github-api");
 const parseGitHubUrl = require("github-url-to-object");
@@ -10,6 +10,7 @@ const parseGitHubUrl = require("github-url-to-object");
 
 const config = JSON.parse(fs.readFileSync(path.join(__dirname, "containerizer.json")));
 const versionInfoFileName = "containerizer_client_app_version.json";
+const isClosingClientApp = false;
 main();
 
 async function main() {
@@ -17,7 +18,7 @@ async function main() {
         console.log();
         console.log(chalk.green("First run detected, installing..."));
         console.log();
-        fs.writeFileSync(path.join(__dirname, "installStatus.json"), JSON.stringify({stepNr: 0, totalSteps: 10, statusText: "Loading"}));
+        fs.writeFileSync(path.join(__dirname, "installStatus.json"), JSON.stringify({ stepNr: 0, totalSteps: 10, statusText: "Loading" }));
         const server = createStatusServer();
         console.log(chalk.yellow("Status server started on port 80"));
         await install();
@@ -49,6 +50,7 @@ async function main() {
 }
 
 function startApp() {
+    isClosingClientApp = false;
     const config = JSON.parse(fs.readFileSync(path.join(__dirname, "containerizer.json")));
     const clientAppProcess = spawn("node", [insideWorkDirPath(config.startFile, config)]);
     clientAppProcess.stdout.on("data", data => {
@@ -62,18 +64,25 @@ function startApp() {
     });
     clientAppProcess.on("close", code => {
         console.log(chalk.yellow(`Client app exited with code ${code}.`));
+        if (isClosingClientApp) {
+            console.log(chalk.yellow(`This exit was initiated by containerizer in order to update the app.`));
+        } else {
+            console.log(chalk.yellow(`Restarting client app.`));
+            startApp();
+        }
     });
-    const server = http.createServer(async function (request, response) {
+    const server = http.createServer(async function(request, response) {
         response.writeHead(200, { "Content-Type": "application/json" });
         if (request.url.endsWith("/update")) {
-            response.end(JSON.stringify({success: true}), "utf-8");
+            response.end(JSON.stringify({ success: true }), "utf-8");
+            isClosingClientApp = true;
             server.close();
             await update(clientAppProcess);
         } else {
             const gh = new GitHub();
             const repoInfo = parseGitHubUrl(config.repository);
             if (!fs.existsSync(path.join(__dirname, versionInfoFileName))) {
-                response.end(JSON.stringify({updatesAvalible: false}), "utf-8");
+                response.end(JSON.stringify({ updatesAvalible: false }), "utf-8");
                 return;
             }
             const versionInfo = JSON.parse(fs.readFileSync(path.join(__dirname, versionInfoFileName)));
@@ -96,7 +105,7 @@ function startApp() {
             }
             data.containerizerVersion = require("./package.json").version;
             data.time = Date.now();
-            response.end(JSON.stringify({data}, getCircularReplacer()), "utf-8");
+            response.end(JSON.stringify({ data }, getCircularReplacer()), "utf-8");
         }
     }).listen(8314);
 }
@@ -156,24 +165,24 @@ function detectEnvChange() {
 }
 
 function removeDuplicates(array) {
-    return array.filter((a, b) => array.indexOf(a) === b) ;
+    return array.filter((a, b) => array.indexOf(a) === b);
 };
 
 const getCircularReplacer = () => {
     const seen = new WeakSet();
     return (key, value) => {
-      if (typeof value === "object" && value !== null) {
-        if (seen.has(value)) {
-          return;
+        if (typeof value === "object" && value !== null) {
+            if (seen.has(value)) {
+                return;
+            }
+            seen.add(value);
         }
-        seen.add(value);
-      }
-      return value;
+        return value;
     };
 };
 
-function createStatusServer(updating=false) {
-    return http.createServer(function (request, response) {
+function createStatusServer(updating = false) {
+    return http.createServer(function(request, response) {
         response.writeHead(200, { "Content-Type": "text/html" });
         const data = JSON.parse(fs.readFileSync(path.join(__dirname, "installStatus.json")).toString());
         const percentage = Math.ceil(data.stepNr / data.totalSteps * 100);
