@@ -49,7 +49,7 @@ export async function cli(args) {
         supportNativeDependencies: false,
         supportImageManipulation: false,
         supportMicrosoftFonts: false,
-        wirkingDirPath: "/app/work",
+        workingDirPath: "/app/work",
         filesToCreate: `{
             'path': 'path/to/my/file',
             'template': 'typescript',
