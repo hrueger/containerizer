@@ -8,6 +8,8 @@
 
 This is a simple and easy to use CLI to pack an application made with Angular and Express into a docker container.
 
+>## ⚠️ Containerizer is deprecated. Please use [container-env](https://github.com/hrueger/container-env#readme) instead.
+
 ![Demo](./containerizer_demo.gif)
 
 ## What does it do?
